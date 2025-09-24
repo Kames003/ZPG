@@ -320,3 +320,126 @@ static GLuint createProgram() {
 }
 
 ```
+
+```makefile
+
+cmake_minimum_required(VERSION 3.29)
+project(untitled)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Get the Homebrew prefix to locate installed packages
+execute_process(
+        COMMAND brew --prefix
+        OUTPUT_VARIABLE HOMEBREW_PREFIX
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+message(STATUS "Homebrew prefix: ${HOMEBREW_PREFIX}")
+
+# --- GLFW (headers + lib) -----------------------------------------------------
+# hľadaj najprv include
+find_path(GLFW_INCLUDE_DIR
+        NAMES GLFW/glfw3.h
+        HINTS ${HOMEBREW_PREFIX}/include
+)
+if (GLFW_INCLUDE_DIR)
+    message(STATUS "Found GLFW include directory: ${GLFW_INCLUDE_DIR}")
+else()
+    message(FATAL_ERROR "Could not find GLFW include directory")
+endif()
+
+# hľadaj knižnicu – skúsi "glfw" aj "glfw3"
+find_library(GLFW_LIB
+        NAMES glfw glfw3
+        HINTS ${HOMEBREW_PREFIX}/lib
+)
+if (GLFW_LIB)
+    message(STATUS "Found GLFW library: ${GLFW_LIB}")
+else()
+    message(FATAL_ERROR "Could not find GLFW library (tried names 'glfw','glfw3').")
+endif()
+
+
+# --- GLM (header-only) --------------------------------------------------------
+find_path(GLM_INCLUDE_DIR
+        NAMES glm/glm.hpp
+        HINTS ${HOMEBREW_PREFIX}/include
+)
+if (GLM_INCLUDE_DIR)
+    message(STATUS "Found GLM include directory: ${GLM_INCLUDE_DIR}")
+else()
+    message(FATAL_ERROR "Could not find GLM include directory")
+endif()
+
+
+# --- GLEW (voliteľné, zatiaľ zakomentované) -----------------------------------
+# Ak budete chcieť GLEW, odkomentujte celý blok nižšie:
+find_path(GLEW_INCLUDE_DIR
+     NAMES GL/glew.h
+     HINTS ${HOMEBREW_PREFIX}/include
+ )
+ if (GLEW_INCLUDE_DIR)
+     message(STATUS "Found GLEW include directory: ${GLEW_INCLUDE_DIR}")
+ else()
+     message(FATAL_ERROR "Could not find GLEW include directory")
+ endif()
+
+ find_library(GLEW_LIB
+     NAMES GLEW glew glew32
+     HINTS ${HOMEBREW_PREFIX}/lib
+ )
+ if (GLEW_LIB)
+     message(STATUS "Found GLEW library: ${GLEW_LIB}")
+ else()
+     message(FATAL_ERROR "Could not find GLEW library")
+ endif()
+
+
+# --- SOIL / ASSIMP (ponechané, ale vypnuté) ----------------------------------
+# file(GLOB SOIL_SOURCES
+#   ${CMAKE_SOURCE_DIR}/lib/soil/src/*.c
+# )
+# find_path(ASSIMP_INCLUDE_DIR assimp/Importer.hpp HINTS ${HOMEBREW_PREFIX}/include)
+# find_library(ASSIMP_LIB NAMES assimp HINTS ${HOMEBREW_PREFIX}/lib)
+# include_directories(${CMAKE_SOURCE_DIR}/lib/soil/include)
+# add_library(SOIL STATIC ${SOIL_SOURCES})
+
+
+# --- ZDROJÁKY -----------------------------------------------------------------
+# PÔVODNÝ rozsiahly zoznam súborov – ponechaný na neskôr, zatiaľ to isté čo bolo:
+# add_executable(zpgproj
+#     src/main.cpp
+#     src/App.cpp
+#     …
+# )
+# Teraz minimalisticky iba main.cpp:
+add_executable(untitled src/main.cpp)
+
+# --- INCLUDE DIRECTORIES ------------------------------------------------------
+target_include_directories(untitled PRIVATE
+        ${GLFW_INCLUDE_DIR}
+        ${GLM_INCLUDE_DIR}
+        ${GLEW_INCLUDE_DIR}   # odkomentujte, ak používate GLEW
+        src
+)
+
+# --- LINKING ------------------------------------------------------------------
+target_link_libraries(untitled PRIVATE
+        ${GLFW_LIB}
+        ${GLEW_LIB}           # odkomentujte, ak používate GLEW
+        # SOIL
+        # ${ASSIMP_LIB}
+        # macOS frameworks
+        "-framework Cocoa"
+        "-framework IOKit"
+        "-framework CoreVideo"
+        "-framework OpenGL"
+        "-framework CoreFoundation"
+        "-lobjc"
+)
+
+# Voliteľne: potlačí deprecated warny fixed‐function OpenGL na macOS
+target_compile_definitions(untitled PRIVATE GL_SILENCE_DEPRECATION)
+
+
+```
